@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "apimName": {
+      "type": "string",
+      "metadata": {
+        "description": "API Management name."
+      }
+    },
+    "relayAccessKeyName": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Relay access key name"
+      }
+    },
+    "relayAccessKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Azure Relay access key"
+      }
+    }
+  },
+  "resources": [
+    /*
+     * Next two are Azure Relay configurations
+     */
+    {
+      "name": "[concat(parameters('apimName'), '/accesskey')]",
+      "type": "Microsoft.ApiManagement/service/properties",
+      "apiVersion": "2019-01-01",
+      "properties": {
+        "secret": true,
+        "displayName": "relayAccessKey",
+        "value": "[parameters('relayAccessKey')]"
+      }
+    },
+    {
+      "name": "[concat(parameters('apimName'), '/accesskeyname')]",
+      "type": "Microsoft.ApiManagement/service/properties",
+      "apiVersion": "2019-01-01",
+      "properties": {
+        "secret": false,
+        "displayName": "accessKeyName",
+        "value": "[parameters('relayAccessKeyName')]"
+      }
+    }
+  ]
+}

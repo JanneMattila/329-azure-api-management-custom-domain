@@ -1,0 +1,101 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "apimName": {
+      "type": "string",
+      "metadata": {
+        "description": "API Management name."
+      }
+    },
+    "serviceUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "Service Url of Mock API"
+      }
+    },
+    "templateUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage account container base url for deployment templates"
+      }
+    },
+    "templateToken": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Storage account access token for accessing templates"
+      }
+    }
+  },
+  "variables": {
+    "apiName": "mock",
+    "apiPath": "mock",
+
+    "apiResourceName": "[concat(parameters('apimName'), '/', variables('apiName'))]",
+    "apiResourceId": "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apimName'), variables('apiName'))]",
+
+    "apiGetResourceName": "[concat(variables('apiResourceName'), '/get')]",
+    "apiGetResourceId": "[resourceId('Microsoft.ApiManagement/service/apis/operations', parameters('apimName'), variables('apiName'), 'get')]"
+  },
+  "resources": [
+    {
+      "name": "[variables('apiResourceName')]",
+      "type": "Microsoft.ApiManagement/service/apis",
+      "apiVersion": "2019-01-01",
+      "properties": {
+        "displayName": "Mock",
+        "description": "Some mock example responses",
+        "serviceUrl": "[parameters('serviceUrl')]",
+        "path": "[variables('apiPath')]",
+        "subscriptionRequired": false,
+        "protocols": [
+          "https"
+        ]
+      }
+    },
+    {
+      "name": "[variables('apiGetResourceName')]",
+      "type": "Microsoft.ApiManagement/service/apis/operations",
+      "apiVersion": "2018-01-01",
+      "properties": {
+        "displayName": "Returns mock data using GET.",
+        "method": "GET",
+        "urlTemplate": "/",
+        "templateParameters": [
+        ],
+        "description": "Returns mock data using GET.\n",
+        "responses": [
+          {
+            "statusCode": 200,
+            "description": "OK",
+            "headers": [
+            ],
+            "representations": [
+              {
+                "contentType": "application/json",
+                "sample": "{\r\n    \"from\": \"This is mock response from the APIM\"\r\n}"
+              }
+            ]
+          }
+        ]
+      },
+      "resources": [
+        {
+          "name": "policy",
+          "type": "policies",
+          "apiVersion": "2019-01-01",
+          "properties": {
+            "value": "[concat(parameters('templateUrl'), 'api/mock/api-get.xml', parameters('templateToken'))]",
+            "format": "rawxml-link"
+          },
+          "dependsOn": [
+            "[variables('apiGetResourceId')]"
+          ]
+        }
+      ],
+      "dependsOn": [
+        "[variables('apiResourceId')]"
+      ]
+    }
+  ]
+}

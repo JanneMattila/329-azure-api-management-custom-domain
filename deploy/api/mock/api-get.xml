@@ -1,0 +1,18 @@
+<policies>
+    <inbound>
+        <base />
+        <mock-response status-code="200" content-type="application/json" />
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <set-header name="X-Mock-Example" exists-action="override">
+            <value>v1</value>
+        </set-header>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>
