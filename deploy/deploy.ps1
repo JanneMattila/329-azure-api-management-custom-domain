@@ -17,6 +17,14 @@ Param (
     [Parameter(HelpMessage="API Management Name")] 
     [string] $APIMName = "contosoapim2-local",
 
+    # E.g. yourdomain-local.contoso.com
+    [Parameter(HelpMessage="Custom domain name")] 
+    [string] $CustomDomain,
+
+    # E.g. https://yourkeyvault-local.vault.azure.net/secrets/apim-custom-domain
+    [Parameter(HelpMessage="Custom domain certificate identifier")] 
+    [string] $KeyVaultID,
+
     [string] $Template = "azuredeploy.json",
     [string] $TemplateParameters = "$PSScriptRoot\azuredeploy.parameters.json"
 )
@@ -83,6 +91,8 @@ if ($null -eq (Get-AzResourceGroup -Name $ResourceGroupName -Location $Location 
 
 # Additional parameters that we pass to the template deployment
 $additionalParameters = New-Object -TypeName hashtable
+$additionalParameters['customDomain'] = $CustomDomain
+$additionalParameters['keyVaultID'] = $KeyVaultID
 $additionalParameters['apimName'] = $APIMName
 $additionalParameters['templateUrl'] = $templateUrl
 $additionalParameters['templateToken'] = ConvertTo-SecureString -String $templateToken -AsPlainText
@@ -108,3 +118,33 @@ $apimGateway = $result.Outputs.apimGateway.value
 # Publish variable to the Azure DevOps agents so that they
 # can be used in follow-up tasks such as application deployment
 Write-Host "##vso[task.setvariable variable=Custom.APIMGateway;]$apimGateway"
+Write-Host "##vso[task.setvariable variable=Custom.CustomDomain;]$CustomDomain"
+
+Write-Host "Validating that our *MANDATORY* API is up and running..."
+$webAppUri = "https://$CustomDomain/mock"
+$running = 0
+for ($i = 0; $i -lt 60; $i++)
+{
+    try 
+    {
+        $request = Invoke-WebRequest -Uri $webAppUri -UseBasicParsing -DisableKeepAlive -ErrorAction SilentlyContinue
+        Write-Host "API status code $($request.StatusCode)."
+
+        if ($request.StatusCode -eq 200)
+        {
+            Write-Host "API is up and running."
+            $running++
+        }
+    }
+    catch
+    {
+        Start-Sleep -Seconds 3
+    }
+
+    if ($running -eq 1)
+    {
+        return
+    }
+}
+
+Throw "Mandatory API didn't respond on defined time."
