@@ -78,7 +78,10 @@
             "[parameters('apimName')]"
           ]
         }
-      ]
+      ],
+      "identity": {
+        "type": "SystemAssigned"
+      }
     },
     {
       "name": "apiMockTemplate",
